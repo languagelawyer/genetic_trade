@@ -6,7 +6,7 @@ Output $> 0.5$ results in a Buy signal, output $< -0.5$ results in a Sell signal
 Buying is for the minimal possible order size, Sell — closes the whole position.
 Testing on 1s spot data for simplicity (all orders are Market orders).
 
-The input to the model is very poor: only the ratio of the last two bars.
+The input to the model is very limited: only the ratio of the last two bars.
 Richer input (price, volume, even the current position size etc.) should theoretically help the model.
 
 After ~10 generations in pretty pleasant conditions (the price is rising), one of the models managed to earn $0.001753$ USDT.
@@ -16,3 +16,13 @@ The later result (weights) is saved in the `results.txt` file.
 
 With 100 individuals in the population and with more generations, the results should be more impressive.
 But that would be very time-consuming, especially when backtesting over a month — let alone an entire year.
+
+## Updates
+
+### 2025-04-25
+
+Added the number of positions as a maximization objective.
+Increased the size of the population to 100.
+Managed to generate some profit after 10-20 generations.
+
+Still no commission, though.
