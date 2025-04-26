@@ -20,8 +20,9 @@ class Trader:
 		return Signal.HOLD
 
 class Spot:
-	def trade(self, *, trader: Trader, data: DataFrame, min_order_size: usdt, initial_quote: usdt = 0):
+	def trade(self, *, trader: Trader, data: DataFrame, min_order_size: usdt, initial_quote: usdt = 0, commission: usdt = 0):
 		self.min_order_size = min_order_size
+		self.commission = commission
 
 		self.quote: usdt = initial_quote
 		self.max_quote: usdt = initial_quote
@@ -66,6 +67,7 @@ class Spot:
 					self.position = Position(id = len(self.positions))
 					self.positions.append(self.position)
 
+				self.quote -= self.commission
 				self.quote -= self.min_order_size
 				order = Order(
 					id = len(self.orders),
@@ -80,6 +82,8 @@ class Spot:
 				# Can't sell for less than min_order_size
 				if self.position.size * next['Low'] < self.min_order_size:
 					continue
+
+				self.quote -= self.commission * len(self.position.orders)
 
 				self.position.close_time = next.index
 				self.position.close_value = self.position.size * next['Low']

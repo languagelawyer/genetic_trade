@@ -19,6 +19,15 @@ But that would be very time-consuming, especially when backtesting over a month 
 
 ## Updates
 
+### 2025-04-26
+
+Added commission per order (applied at buying and closing the position, proportional to the number of orders).
+
+Had to keep the commission really low to evolve a profitable NN in a reasonable number of generations.
+
+Also, added a soft saturation to the number of trades, by applying logarithm.
+Alternatively, could use hard saturation at e.g. `100` trades (`-len(engine.positions[:100])`).
+
 ### 2025-04-25
 
 Added the number of positions as a maximization objective.
