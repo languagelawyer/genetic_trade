@@ -1,3 +1,5 @@
+## Initial description, see Updates below
+
 Trying to evolve a neural network population maximizing return and minimizing MDD using genetic algorithms.
 Using direct encoding of NN parameters (weights and biases).
 
@@ -18,6 +20,15 @@ With 100 individuals in the population and with more generations, the results sh
 But that would be very time-consuming, especially when backtesting over a month — let alone an entire year.
 
 ## Updates
+
+### 2025-04-27
+
+Found a random seed to roll a profitable individual in the first (initial) generation.
+Should help reproducibility.
+
+Also, found that wide parameters bounds (±10, ±20 etc.) result in long evolution before the first profitable individual.
+Narrowind to ±5, or even to ±3 helps a lot.
+After all, the weights in a NN should not be too big.
 
 ### 2025-04-26
 
