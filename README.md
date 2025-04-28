@@ -21,6 +21,11 @@ But that would be very time-consuming, especially when backtesting over a month 
 
 ## Updates
 
+### 2025-04-28
+
+Finally added code to restore individuals from `results.txt`.
+This is probably better than having random seed resulting in one profitable individual in the initial generation.
+
 ### 2025-04-27
 
 Found a random seed to roll a profitable individual in the first (initial) generation.
