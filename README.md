@@ -21,6 +21,15 @@ But that would be very time-consuming, especially when backtesting over a month 
 
 ## Updates
 
+### 2025-04-29
+
+Fixed a major bug in `NNTrader` where it stopped generating non-`HOLD` signals once the total position value reached `max_pos_value`.
+So, it never closed such positions and were effectively stopping trading.
+
+Also, fixed mess in total position value calculation, where it was summing order *prices*.
+
+This resulted in a few noticeably profitable individuals after a dozen of generations.
+
 ### 2025-04-28
 
 Finally added code to restore individuals from `results.txt`.
