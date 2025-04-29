@@ -20,39 +20,37 @@ class Trader:
 		return Signal.HOLD
 
 class Spot:
-	def trade(self, *, trader: Trader, data: DataFrame, min_order_size: usdt, initial_quote: usdt = 0, commission: usdt = 0):
-		self.min_order_size = min_order_size
+	def trade(self, *, trader: Trader, data: DataFrame, min_order_value: usdt, initial_balance: usdt = 0, commission: usdt = 0):
+		self.min_order_value = min_order_value
 		self.commission = commission
 
-		self.quote: usdt = initial_quote
-		self.max_quote: usdt = initial_quote
+		self.balance: usdt = initial_balance # available quote
+		self.max_equity: usdt = initial_balance
 		self.mdd: usdt = 0
 
-		self.quotes: list[usdt] = [initial_quote, initial_quote]
-		self.drawdowns: list[usdt] = [0, 0]
+		self.equities: list[usdt] = [initial_balance, initial_balance]
 
 		self.orders: list[Order] = []
 		self.positions: list[Position] = []
 
 		self.position: Optional[Position] = None
 		# Start from 2 so that the trader could have a ratio of 2 bars
-		# End at len(data)-1 so that we could execute the order at the "next" bar
+		# End at len(data)-1 so that we could execute the order at the "current" bar
 		for i in range(2, len(data) - 1):
-			next = data.iloc[i+1]
+			curr = data.iloc[i+1]
 
 			# Since we assume trading at 1s intervals,
-			# update the quote and MDD at the "next" bar,
+			# update the equity and MDD at the "current" bar,
 			# before executing the order
-			quote = self.quote
+			equity = self.balance # free quote + asset value
 			if self.position:
-				quote += self.position.size * next['Low']
+				equity += self.position.size * curr['Low']
 
-			self.max_quote = max(self.max_quote, quote)
-			drawdown = (self.max_quote - quote) / self.max_quote
+			self.max_equity = max(self.max_equity, equity)
+			drawdown = (self.max_equity - equity) / self.max_equity
 			self.mdd = max(self.mdd, drawdown)
 
-			self.quotes.append(quote)
-			self.drawdowns.append(drawdown)
+			self.equities.append(equity)
 
 			# Since we assume trading at 1s intervals, all orders are marked orders
 			# and are executed conservatively/pessimistically, at worst prices:
@@ -67,25 +65,26 @@ class Spot:
 					self.position = Position(id = len(self.positions))
 					self.positions.append(self.position)
 
-				self.quote -= self.commission
-				self.quote -= self.min_order_size
+				self.balance -= self.commission
+				self.balance -= self.min_order_value
 				order = Order(
 					id = len(self.orders),
-					create_time = next.index,
-					price = next['High'],
-					size = self.min_order_size / next['High'],
+					create_time = curr.index,
+					price = curr['High'],
+					size = self.min_order_value / curr['High'],
 				)
 				self.orders.append(order)
 				self.position.add_order(order)
 
 			if signal == Signal.SELL and self.position:
+				close_value = self.position.size * curr['Low']
 				# Can't sell for less than min_order_size
-				if self.position.size * next['Low'] < self.min_order_size:
+				if close_value < self.min_order_value:
 					continue
 
-				self.quote -= self.commission * len(self.position.orders)
+				self.balance -= self.commission * len(self.position.orders)
 
-				self.position.close_time = next.index
-				self.position.close_value = self.position.size * next['Low']
-				self.quote += self.position.close_value
+				self.position.close_time = curr.index
+				self.position.close_value = close_value
+				self.balance += close_value
 				self.position = None

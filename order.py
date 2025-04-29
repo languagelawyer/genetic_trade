@@ -12,4 +12,3 @@ class Order:
 
 	size: float
 	price: usdt
-
