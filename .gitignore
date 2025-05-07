@@ -8,3 +8,6 @@
 !src/
 !src/*.cpp
 !src/*.hpp
+!tests/
+!tests/CMakeLists.txt
+!tests/*.cpp
