@@ -13,3 +13,7 @@
 !tests/
 !tests/CMakeLists.txt
 !tests/*.cpp
+
+!binance_column_names.py
+!evolve.ipynb
+!params.txt
