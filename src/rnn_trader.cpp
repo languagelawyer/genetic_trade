@@ -36,11 +36,6 @@ namespace
 
 		static constexpr size_t ParamCount = RNN::ParamCount + Linear::ParamCount;
 
-		void reset()
-		{
-			rnn.reset();
-		}
-
 		void operator()(const double* params, const double* in, double* out)
 		{
 			rnn(params, in), params += decltype(rnn)::ParamCount;

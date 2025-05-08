@@ -20,8 +20,6 @@ struct RNNCell {
 
 	std::array<T, Hidden> h = {};
 
-	void reset() { h = {}; }
-
 	void operator()(const T* params, const T* in)
 	{
 		decltype(h) ox, oh;
@@ -49,11 +47,6 @@ struct RNN {
 	// with some dirty reinterpret_cast hacks on the first layer
 	// This allows accessing ls.back() even for Layers == 1
 	std::array<LS, Layers> ls;
-
-	void reset()
-	{
-		for (auto& l : ls) l.reset();
-	}
 
 	void operator()(const T* params, const T* in)
 	{
