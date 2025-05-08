@@ -1,5 +1,6 @@
 set(Tests
 	test_equity_history
+	test_nn_linear
 )
 
 foreach(Test ${Tests})
