@@ -5,6 +5,7 @@
 
 #include "nn/linear.hpp"
 #include "nn/rnn.hpp"
+#include "nn/lstm.hpp"
 
 #include <cmath>
 #include <cstddef>
@@ -17,19 +18,19 @@ namespace
 {
 	constexpr double initial_balance = 200;
 	constexpr double min_order_value = 5;
-	constexpr double commission = 0.00022;
+	constexpr double commission = 0.002;
 	constexpr size_t warmup_period = 600;
 	constexpr double max_position_value = 100;
 
 	struct Network
 	{
-		static constexpr size_t In = 1;
-		static constexpr size_t Hidden = 12;
+		static constexpr size_t In = 2;
+		static constexpr size_t Hidden = 10;
 		static constexpr size_t Layers = 2;
 		static constexpr size_t Out = 1;
-		static constexpr bool Bias = false;
+		static constexpr bool Bias = true;
 
-		using RNN = NN::RNN<double, In, Hidden, Layers, Bias>;
+		using RNN = NN::RNN<NN::LSTMCell, double, In, Hidden, Layers, Bias>;
 		using Linear = NN::Linear<double, Hidden, Out, Bias>;
 
 		RNN rnn;
@@ -64,9 +65,12 @@ namespace
 			const auto& last = past_data[past_data.size() - 1];
 			const auto& prev = past_data[past_data.size() - 2];
 
-			auto ratio = std::log(last.open / prev.open);
+			double in[Network::In] = {
+				std::log(last.open / prev.open),
+				std::log(last.volume + 1),
+			};
 			double out[Network::Out]; // tanh output, (-1, 1) range
-			nn(params, &ratio, out);
+			nn(params, in, out);
 
 			if (past_data.size() < warmup_period) return Signal::HOLD;
 
@@ -109,10 +113,17 @@ extern "C"
 			NNTrader trader(engine, nn, params);
 			engine.trade(trader, { candles, candles_per_period });
 
+			// Do not punish for no trades:
+			// if the model understands the market is not great
+			// why should it be punished?
+			if (engine.positions.empty()) continue;
+
 			worst_balance = std::min(worst_balance, engine.balance);
 			worst_mdd = std::max(worst_mdd, engine.mdd);
 			total_positions += engine.positions.size();
 		}
+
+		if (total_positions == 0) worst_balance = initial_balance;
 
 		// we have a minimization task
 		// so negate objectives that should be maximized
