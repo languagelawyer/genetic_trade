@@ -4,7 +4,7 @@
 #include <functional>
 
 
-void spot::trade(trader& trader, std::span<candle> candles)
+void spot::trade(trader& trader, std::span<const candle> candles)
 {
 	// Loop till one before the last, so we can haz the "current" bar
 	for (auto i = 0u; i + 1 < candles.size(); ++i)

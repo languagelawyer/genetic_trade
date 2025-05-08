@@ -9,7 +9,7 @@
 
 class test_trader : public trader
 {
-	Signal operator()(std::span<candle> past_data) override
+	Signal operator()(std::span<const candle> past_data) override
 	{
 		if (past_data.size() == 1) return Signal::BUY;
 		if (past_data.size() == 3) return Signal::SELL;

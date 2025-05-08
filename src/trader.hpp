@@ -10,5 +10,5 @@ struct trader
 {
 	virtual ~trader() = default;
 
-	virtual Signal operator()(std::span<candle> past_data) = 0;
+	virtual Signal operator()(std::span<const candle> past_data) = 0;
 };

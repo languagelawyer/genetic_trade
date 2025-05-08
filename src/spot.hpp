@@ -30,5 +30,5 @@ struct spot
 
 	position* pos = nullptr;
 
-	void trade(trader& trader, std::span<candle> past_data);
+	void trade(trader& trader, std::span<const candle> past_data);
 };

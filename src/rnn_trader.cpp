@@ -57,7 +57,7 @@ namespace
 		, params(params)
 		{}
 
-		Signal operator()(std::span<candle> past_data) override
+		Signal operator()(std::span<const candle> past_data) override
 		{
 			if (past_data.size() < 2) return Signal::HOLD;
 
@@ -87,7 +87,7 @@ extern "C"
 	extern const size_t rnn_trader_var = Network::ParamCount;
 	extern const size_t rnn_trader_obj = 3; // (return, MDD, number of positions)
 
-	candle* rnn_trader_candles;
+	const candle* rnn_trader_candles;
 	std::size_t rnn_trader_candlle_count;
 
 	void rnn_trader_run(const double params[rnn_trader_var], double out[rnn_trader_obj])
