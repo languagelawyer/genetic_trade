@@ -17,6 +17,7 @@ namespace
 {
 	constexpr double initial_balance = 200;
 	constexpr double min_order_value = 5;
+	constexpr double commission = 0.00022;
 	constexpr size_t warmup_period = 600;
 	constexpr double max_position_value = 100;
 
@@ -96,16 +97,32 @@ extern "C"
 
 	void rnn_trader_run(const double params[rnn_trader_var], double out[rnn_trader_obj])
 	{
-		spot engine{ min_order_value, 0.005, initial_balance, };
-		Network nn;
-		NNTrader trader(engine, nn, params);
+		// lets get worst over several periods
+		// this should help against overfitting
+		constexpr size_t periods = 4;
+		const size_t candles_per_period = rnn_trader_candlle_count / periods;
 
-		engine.trade(trader, { rnn_trader_candles, rnn_trader_candlle_count });
+		double worst_balance = 1e6;
+		double worst_mdd = 0;
+		std::size_t total_positions = 0;
+		for (int i = 0; i < periods; i++)
+		{
+			auto candles = rnn_trader_candles + i * candles_per_period;
+
+			spot engine{ min_order_value, commission, initial_balance, };
+			Network nn;
+			NNTrader trader(engine, nn, params);
+			engine.trade(trader, { candles, candles_per_period });
+
+			worst_balance = std::min(worst_balance, engine.balance);
+			worst_mdd = std::max(worst_mdd, engine.mdd);
+			total_positions += engine.positions.size();
+		}
 
 		// we have a minimization task
 		// so negate objectives that should be maximized
-		out[0] = -(engine.balance - initial_balance);
-		out[1] = engine.mdd;
-		out[2] = -std::log(engine.positions.size() + 1);
+		out[0] = -(worst_balance - initial_balance);
+		out[1] = worst_mdd;
+		out[2] = -std::log(total_positions + 1);
 	}
 }
