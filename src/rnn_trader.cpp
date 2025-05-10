@@ -18,17 +18,17 @@ namespace
 {
 	constexpr double initial_balance = 200;
 	constexpr double min_order_value = 5;
-	constexpr double commission = 0.002;
+	constexpr double commission = 0.01;
 	constexpr size_t warmup_period = 600;
 	constexpr double max_position_value = 100;
 
 	struct Network
 	{
 		static constexpr size_t In = 2;
-		static constexpr size_t Hidden = 10;
-		static constexpr size_t Layers = 2;
+		static constexpr size_t Hidden = 4;
+		static constexpr size_t Layers = 4;
 		static constexpr size_t Out = 1;
-		static constexpr bool Bias = true;
+		static constexpr bool Bias = false;
 
 		using RNN = NN::RNN<NN::LSTMCell, double, In, Hidden, Layers, Bias>;
 		using Linear = NN::Linear<double, Hidden, Out, Bias>;
@@ -89,21 +89,23 @@ namespace
 extern "C"
 {
 	extern const size_t rnn_trader_var = Network::ParamCount;
-	extern const size_t rnn_trader_obj = 3; // (return, MDD, number of positions)
+	extern const size_t rnn_trader_obj = 3; // (worst profit (over several periods), MDD, number of positions)
+	extern const size_t rnn_trader_stat = 1; // total profit
 
 	const candle* rnn_trader_candles;
 	std::size_t rnn_trader_candlle_count;
 
-	void rnn_trader_run(const double params[rnn_trader_var], double out[rnn_trader_obj])
+	void rnn_trader_run(const double params[rnn_trader_var], double out[rnn_trader_obj], double stat[rnn_trader_stat])
 	{
 		// lets get worst over several periods
 		// this should help against overfitting
-		constexpr size_t periods = 4;
+		constexpr size_t periods = 3;
 		const size_t candles_per_period = rnn_trader_candlle_count / periods;
 
 		double worst_balance = 1e6;
 		double worst_mdd = 0;
 		std::size_t total_positions = 0;
+		double total_profit = 0;
 		for (int i = 0; i < periods; i++)
 		{
 			auto candles = rnn_trader_candles + i * candles_per_period;
@@ -113,22 +115,18 @@ extern "C"
 			NNTrader trader(engine, nn, params);
 			engine.trade(trader, { candles, candles_per_period });
 
-			// Do not punish for no trades:
-			// if the model understands the market is not great
-			// why should it be punished?
-			if (engine.positions.empty()) continue;
-
 			worst_balance = std::min(worst_balance, engine.balance);
 			worst_mdd = std::max(worst_mdd, engine.mdd);
 			total_positions += engine.positions.size();
+			total_profit += engine.balance - initial_balance;
 		}
-
-		if (total_positions == 0) worst_balance = initial_balance;
 
 		// we have a minimization task
 		// so negate objectives that should be maximized
 		out[0] = -(worst_balance - initial_balance);
 		out[1] = worst_mdd;
 		out[2] = -std::log(total_positions + 1);
+
+		stat[0] = total_profit;
 	}
 }
