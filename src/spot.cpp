@@ -11,26 +11,11 @@ void spot::trade(trader& trader, std::span<const candle> candles)
 	{
 		const auto& curr = candles[i + 1];
 
-		auto eqty = [&] {
-			if (!pos) return balance;
-			return balance + pos->size * curr.low;
-		};
-
 		// Since we assume trading at 1s intervals,
 		// update the equity and MDD at the "current" bar,
 		// before executing the order
-		auto equity = eqty();
-
-		balance_open.push_back(balance);
-		equity_open.push_back(equity);
-		struct atclose
-		{
-			std::function<void()> f;
-			~atclose() { f(); }
-		} atclose { [&] {
-			balance_close.push_back(balance);
-			equity_close.push_back(eqty());
-		} };
+		auto equity = balance;
+		if (pos) equity += pos->size * curr.low;
 
 		max_equity = std::max(max_equity, equity);
 		auto drawdown = (max_equity - equity) / max_equity;
