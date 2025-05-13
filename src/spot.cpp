@@ -45,7 +45,7 @@ void spot::trade(trader& trader, std::span<const candle> candles)
 			orders.push_back(std::move(o));
 		}
 
-		if ((signal == Signal::SELL or i + 2 == candles.size()) and pos)
+		if (signal == Signal::SELL and pos)
 		{
 			auto close_value = pos->size * curr.low;
 			// Can't sell for less than min_order_size

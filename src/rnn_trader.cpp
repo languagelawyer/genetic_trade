@@ -108,6 +108,9 @@ extern "C"
 		NNTrader trader(engine, nn, params);
 		engine.trade(trader, { candles, candle_count });
 
+		// Roll-back the position, the trader couldn't know the time is finite
+		if (engine.pos) engine.balance += engine.pos->orders.size() * (min_order_value + commission);
+
 		out->ret = engine.balance - initial_balance;
 		out->mdd = engine.mdd;
 		out->positions = engine.positions.size();
