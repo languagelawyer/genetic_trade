@@ -4,10 +4,10 @@
 
 
 struct candle {
-	std::int64_t open_time;
-	double open;
-	double high;
-	double low;
-	double close;
-	double volume;
+	std::uint32_t open_time;
+	float open;
+	float high;
+	float low;
+	float close;
+	float volume;
 };

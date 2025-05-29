@@ -16,6 +16,8 @@
 
 namespace
 {
+	using param_t = decltype(candle::open);
+
 	constexpr double initial_balance = 200;
 	constexpr double min_order_value = 5;
 	constexpr double commission = 0.01;
@@ -30,19 +32,19 @@ namespace
 		static constexpr size_t Out = 1;
 		static constexpr bool Bias = false;
 
-		using RNN = NN::RNN<NN::LSTMCell, double, In, Hidden, Layers, Bias>;
-		using Linear = NN::Linear<double, Hidden, Out, Bias>;
+		using RNN = NN::RNN<NN::LSTMCell, param_t, In, Hidden, Layers, Bias>;
+		using Linear = NN::Linear<param_t, Hidden, Out, Bias>;
 
 		RNN rnn;
 
 		static constexpr size_t ParamCount = RNN::ParamCount + Linear::ParamCount;
 
-		void operator()(const double* params, const double* in, double* out)
+		void operator()(const param_t* params, const param_t* in, param_t* out)
 		{
 			rnn(params, in), params += decltype(rnn)::ParamCount;
 			Linear{}(params, rnn.ls.back().h.data(), out);
 
-			std::for_each(out, out + Out, [](double& x) { x = std::tanh(x); });
+			std::for_each(out, out + Out, [](auto& x) { x = std::tanh(x); });
 		}
 	};
 
@@ -50,9 +52,9 @@ namespace
 	{
 		spot& engine;
 		Network& nn;
-		const double *params;
+		const param_t* params;
 
-		NNTrader(spot& engine, Network& nn, const double* params)
+		NNTrader(spot& engine, Network& nn, const param_t* params)
 		: engine(engine)
 		, nn(nn)
 		, params(params)
@@ -65,11 +67,11 @@ namespace
 			const auto& last = past_data[past_data.size() - 1];
 			const auto& prev = past_data[past_data.size() - 2];
 
-			double in[Network::In] = {
+			param_t in[Network::In] = {
 				std::log(last.open / prev.open),
 				std::log(last.volume + 1),
 			};
-			double out[Network::Out]; // tanh output, (-1, 1) range
+			param_t out[Network::Out]; // tanh output, (-1, 1) range
 			nn(params, in, out);
 
 			if (past_data.size() < warmup_period) return Signal::HOLD;
@@ -99,7 +101,7 @@ extern "C"
 	void rnn_trader_run(
 		const candle* candles,
 		std::size_t candle_count,
-		const double params[rnn_trader_var],
+		const param_t params[rnn_trader_var],
 		Out* out
 	)
 	{
