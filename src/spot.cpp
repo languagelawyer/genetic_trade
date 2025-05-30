@@ -15,7 +15,11 @@ void spot::trade(trader& trader, std::span<const candle> candles)
 		// update the equity and MDD at the "current" bar,
 		// before executing the order
 		auto equity = balance;
-		if (pos) equity += pos->size * curr.low;
+		if (pos)
+		{
+			pos->current_value = pos->size * curr.low;
+			equity += pos->current_value;
+		}
 
 		max_equity = std::max(max_equity, equity);
 		auto drawdown = (max_equity - equity) / max_equity;
@@ -47,7 +51,7 @@ void spot::trade(trader& trader, std::span<const candle> candles)
 
 		if (signal == Signal::SELL and pos)
 		{
-			auto close_value = pos->size * curr.low;
+			auto close_value = pos->current_value;
 			// Can't sell for less than min_order_size
 			if (close_value < min_order_value) continue;
 
@@ -55,7 +59,6 @@ void spot::trade(trader& trader, std::span<const candle> candles)
 			balance += close_value;
 
 			pos->close_time = curr.open_time;
-			pos->close_value = close_value;
 			pos = nullptr;
 		}
 	}

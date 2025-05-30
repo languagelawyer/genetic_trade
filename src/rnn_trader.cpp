@@ -12,6 +12,7 @@
 #include <cstdint>
 
 #include <algorithm>
+#include <iterator>
 
 
 namespace
@@ -26,7 +27,7 @@ namespace
 
 	struct Network
 	{
-		static constexpr size_t In = 2;
+		static constexpr size_t In = 4;
 		static constexpr size_t Hidden = 4;
 		static constexpr size_t Layers = 4;
 		static constexpr size_t Out = 1;
@@ -67,10 +68,23 @@ namespace
 			const auto& last = past_data[past_data.size() - 1];
 			const auto& prev = past_data[past_data.size() - 2];
 
-			param_t in[Network::In] = {
+			param_t roi = 0;
+			param_t rel_pos_size = 0; // 0..1
+			if (engine.pos)
+			{
+				auto tv = engine.pos->total_value;
+				auto cv = engine.pos->current_value;
+
+				rel_pos_size = tv / max_position_value;
+				roi = (cv - tv) / tv;
+			}
+			param_t in[] = {
 				std::log(last.open / prev.open),
 				std::log(last.volume + 1),
+				rel_pos_size,
+				roi,
 			};
+			static_assert(std::size(in) >= Network::In);
 			param_t out[Network::Out]; // tanh output, (-1, 1) range
 			nn(params, in, out);
 
